@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  * WeatherResponse weather = sdk.getWeather("London");
  * System.out.println(weather.getName() + ": " + weather.getTemperature().getTemp() + "K");
  * sdk.close();
- * </pre>
+ * </pre>d
  */
 public class WeatherSDK implements AutoCloseable {
     
