@@ -1,12 +1,12 @@
 package com.weather.sdk.client;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.weather.sdk.exception.ApiKeyException;
 import com.weather.sdk.exception.CityNotFoundException;
 import com.weather.sdk.exception.NetworkException;
 import com.weather.sdk.exception.WeatherSDKException;
-import com.weather.sdk.model.*;
+import com.weather.sdk.model.WeatherResponse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -17,37 +17,53 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
+/**
+ * HTTP client for working with OpenWeather API.
+ *
+ * Uses Jackson for JSON parsing.
+ * Handles all API error types with specific exceptions.
+ */
 public class WeatherApiClient {
 
-    private static final String API_BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
+    private static final String BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
     private static final int TIMEOUT_SECONDS = 10;
 
     private final String apiKey;
     private final HttpClient httpClient;
-    private final Gson gson;
+    private final ObjectMapper objectMapper;
 
+    /**
+     * Creates client with specified API key
+     *
+     * @param apiKey OpenWeather API key
+     */
     public WeatherApiClient(String apiKey) {
-        this.apiKey = apiKey;
+        if (apiKey == null || apiKey.trim().isEmpty()) {
+            throw new IllegalArgumentException("API key cannot be null or empty");
+        }
 
+        this.apiKey = apiKey.trim();
         this.httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(TIMEOUT_SECONDS))
                 .followRedirects(HttpClient.Redirect.NORMAL)
                 .build();
-
-        this.gson = new Gson();
+        this.objectMapper = new ObjectMapper();
     }
 
     /**
-     * Gets weather data for the specified city.
+     * Gets current weather for specified city.
      *
-     * @param cityName : city name
-     * @return WeatherData : weather data object
-     * @throws WeatherSDKException if an error occurs
+     * @param cityName city name
+     * @return weather data
+     * @throws ApiKeyException if API key is invalid
+     * @throws CityNotFoundException if city not found
+     * @throws NetworkException on network errors
+     * @throws WeatherSDKException on other errors
      */
-    public WeatherData fetchWeather(String cityName) throws WeatherSDKException {
+    public WeatherResponse getCurrentWeather(String cityName) throws WeatherSDKException {
         try {
             String encodedCity = URLEncoder.encode(cityName, StandardCharsets.UTF_8);
-            String url = String.format("%s?q=%s&appid=%s", API_BASE_URL, encodedCity, apiKey);
+            String url = String.format("%s?q=%s&appid=%s", BASE_URL, encodedCity, apiKey);
 
             HttpRequest request = HttpRequest.newBuilder()
                     .uri(URI.create(url))
@@ -55,106 +71,159 @@ public class WeatherApiClient {
                     .GET()
                     .build();
 
-            HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-            if (response.statusCode() == 404) {
-                throw new CityNotFoundException("City '" + cityName + "' not found");
-            }
-
-            if (response.statusCode() == 401) {
-                throw new WeatherSDKException("Invalid API key. Check your key at https://openweathermap.org");
-            }
+            HttpResponse<String> response = httpClient.send(request,
+                    HttpResponse.BodyHandlers.ofString());
 
             if (response.statusCode() != 200) {
-                throw new NetworkException(
-                        String.format("API returned an error. Code: %d, Message: %s",
-                                response.statusCode(), response.body())
-                );
+                handleErrorResponse(response, cityName);
             }
 
-            return parseApiResponse(response.body());
+            return parseResponse(response.body());
 
         } catch (IOException e) {
             throw new NetworkException("Network error while requesting API: " + e.getMessage(), e);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new NetworkException("The request was aborted", e);
+            throw new NetworkException("Request was interrupted", e);
         }
     }
 
     /**
-     * Parses the JSON response from the API and transforms it into our data model.
+     * Parses JSON API response to WeatherResponse.
      *
-     * The API response structure differs from the required structure in the task,
-     * so we do the mapping manually.
+     * @param jsonResponse JSON string from API
+     * @return WeatherResponse object
+     * @throws WeatherSDKException if parsing fails
      */
-    private WeatherData parseApiResponse(String jsonResponse) throws WeatherSDKException {
+    private WeatherResponse parseResponse(String jsonResponse) throws WeatherSDKException {
         try {
-            JsonObject root = gson.fromJson(jsonResponse, JsonObject.class);
+            JsonNode root = objectMapper.readTree(jsonResponse);
 
-            WeatherResponse weatherResponse = new WeatherResponse();
+            WeatherResponse response = new WeatherResponse();
 
-            JsonArray weatherArray = root.getAsJsonArray("weather");
-            if (weatherArray != null && weatherArray.size() > 0) {
-                JsonObject weatherObj = weatherArray.get(0).getAsJsonObject();
+            // Parse weather
+            JsonNode weatherArray = root.get("weather");
+            if (weatherArray != null && weatherArray.isArray() && weatherArray.size() > 0) {
+                JsonNode weatherNode = weatherArray.get(0);
                 WeatherResponse.Weather weather = new WeatherResponse.Weather(
-                        weatherObj.get("main").getAsString(),
-                        weatherObj.get("description").getAsString()
+                        weatherNode.get("main").asText(),
+                        weatherNode.get("description").asText()
                 );
-                weatherResponse.setWeather(weather);
+                response.setWeather(weather);
             }
 
-            JsonObject main = root.getAsJsonObject("main");
-            if (main != null) {
-                WeatherResponse.Temperature temperature = new WeatherResponse.Temperature(
-                        main.get("temp").getAsDouble(),
-                        main.get("feels_like").getAsDouble()
+            // Parse temperature
+            JsonNode mainNode = root.get("main");
+            if (mainNode != null) {
+                WeatherResponse.Temperature temp = new WeatherResponse.Temperature(
+                        mainNode.get("temp").asDouble(),
+                        mainNode.get("feels_like").asDouble()
                 );
-                weatherResponse.setTemperature(temperature);
+                response.setTemperature(temp);
             }
 
-            // Visibility
-            if (root.has("visibility")) {
-                weatherResponse.setVisibility(root.get("visibility").getAsInt());
+            // Parse visibility
+            JsonNode visibilityNode = root.get("visibility");
+            if (visibilityNode != null) {
+                response.setVisibility(visibilityNode.asInt());
             }
 
-            // Wind
-            JsonObject wind = root.getAsJsonObject("wind");
-            if (wind != null) {
-                WeatherResponse.Wind windData = new WeatherResponse.Wind(wind.get("speed").getAsDouble());
-                weatherResponse.setWind(windData);
-            }
-
-            // Datetime
-            if (root.has("dt")) {
-                weatherResponse.setDatetime(root.get("dt").getAsLong());
-            }
-
-            // Sys (sunrise/sunset)
-            JsonObject sys = root.getAsJsonObject("sys");
-            if (sys != null) {
-                WeatherResponse.Sys sysData = new WeatherResponse.Sys(
-                        sys.get("sunrise").getAsLong(),
-                        sys.get("sunset").getAsLong()
+            // Parse wind
+            JsonNode windNode = root.get("wind");
+            if (windNode != null) {
+                WeatherResponse.Wind wind = new WeatherResponse.Wind(
+                        windNode.get("speed").asDouble()
                 );
-                weatherResponse.setSys(sysData);
+                response.setWind(wind);
             }
 
-            // Timezone
-            if (root.has("timezone")) {
-                weatherResponse.setTimezone(root.get("timezone").getAsInt());
+            // Parse datetime
+            JsonNode dtNode = root.get("dt");
+            if (dtNode != null) {
+                response.setDatetime(dtNode.asLong());
             }
 
-            // Name (city name)
-            if (root.has("name")) {
-                weatherResponse.setName(root.get("name").getAsString());
+            // Parse sys
+            JsonNode sysNode = root.get("sys");
+            if (sysNode != null) {
+                WeatherResponse.Sys sys = new WeatherResponse.Sys(
+                        sysNode.get("sunrise").asLong(),
+                        sysNode.get("sunset").asLong()
+                );
+                response.setSys(sys);
             }
 
-            // Wrap WeatherResponse in WeatherData for caching
-            return new WeatherData(weatherResponse);
+            // Parse timezone
+            JsonNode timezoneNode = root.get("timezone");
+            if (timezoneNode != null) {
+                response.setTimezone(timezoneNode.asInt());
+            }
+
+            // Parse name
+            JsonNode nameNode = root.get("name");
+            if (nameNode != null) {
+                response.setName(nameNode.asText());
+            }
+
+            return response;
 
         } catch (Exception e) {
-            throw new WeatherSDKException("Error parsing API response: " + e.getMessage(), e);
+            throw new WeatherSDKException("Failed to parse API response: " + e.getMessage(), e);
         }
+    }
+
+    /**
+     * Handles HTTP errors with specific exception throwing.
+     *
+     * @param response HTTP error response
+     * @param cityName city name (for error message)
+     * @throws ApiKeyException on 401 error
+     * @throws CityNotFoundException on 404 error
+     * @throws WeatherSDKException on other errors
+     */
+    private void handleErrorResponse(HttpResponse<String> response, String cityName)
+            throws WeatherSDKException {
+        int statusCode = response.statusCode();
+        String body = response.body();
+
+        String errorMessage = extractErrorMessage(body);
+
+        switch (statusCode) {
+            case 401:
+                throw new ApiKeyException(
+                        "Invalid API key. Please check your credentials at https://openweathermap.org");
+            case 404:
+                throw new CityNotFoundException("City '" + cityName + "' not found");
+            case 429:
+                throw new WeatherSDKException(
+                        "API rate limit exceeded. Please try again later.");
+            case 500:
+            case 502:
+            case 503:
+                throw new NetworkException(
+                        "OpenWeather API server error. Please try again later.");
+            default:
+                throw new WeatherSDKException(
+                        String.format("API error (HTTP %d): %s", statusCode, errorMessage));
+        }
+    }
+
+    /**
+     * Extracts error message from JSON response
+     *
+     * @param body HTTP response body
+     * @return error message or "Unknown error"
+     */
+    private String extractErrorMessage(String body) {
+        try {
+            JsonNode root = objectMapper.readTree(body);
+            JsonNode messageNode = root.get("message");
+            if (messageNode != null) {
+                return messageNode.asText();
+            }
+        } catch (Exception ignored) {
+            // Ignore parsing errors
+        }
+        return "Unknown error";
     }
 }

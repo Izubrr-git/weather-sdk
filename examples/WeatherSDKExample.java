@@ -2,19 +2,19 @@ package examples;
 
 import com.weather.sdk.WeatherSDK;
 import com.weather.sdk.WeatherSDKFactory;
-import com.weather.sdk.config.SDKMode;
+import com.weather.sdk.config.OperationMode;
 import com.weather.sdk.exception.WeatherSDKException;
-import com.weather.sdk.model.WeatherData;
+import com.weather.sdk.model.WeatherResponse;
 
 /**
  * WeatherSDK usage examples.
  *
- * ⚠️ Replace "YOUR_API_KEY" with your actual API key from https://openweathermap.org
+ * !! Replace "YOUR_API_KEY" with your actual API key from https://openweathermap.org
  */
 public class WeatherSDKExample {
-    
+
     private static final String API_KEY = "YOUR_API_KEY";
-    
+
     public static void main(String[] args) {
         System.out.println("=== Weather SDK Usage Examples ===\n");
 
@@ -41,14 +41,14 @@ public class WeatherSDKExample {
      * Example 1: Basic usage in ON_DEMAND mode.
      */
     private static void example1_BasicUsage() {
-        System.out.println("📍 Example 1: Basic usage\n");
+        System.out.println("📊 Example 1: Basic usage\n");
 
         try {
             // Create an SDK instance in ON_DEMAND mode
-            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.ON_DEMAND);
 
             // Get the weather for Moscow
-            WeatherData weather = sdk.getWeather("Moscow");
+            WeatherResponse weather = sdk.getWeather("Moscow");
 
             // Display information
             System.out.println("City: " + weather.getName());
@@ -74,27 +74,27 @@ public class WeatherSDKExample {
      * In this mode, data is updated automatically every 5 minutes.
      */
     private static void example2_PollingMode() {
-        System.out.println("📍 Example 2: POLLING mode\n");
+        System.out.println("📊 Example 2: POLLING mode\n");
 
         try {
             // Create SDK in POLLING mode
-            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.POLLING);
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.POLLING);
 
             // First request - data is loaded from the API
             System.out.println("First request (download from API):");
-            WeatherData weather1 = sdk.getWeather("London");
+            WeatherResponse weather1 = sdk.getWeather("London");
             printWeatherShort(weather1);
 
             // Add more cities
             sdk.getWeather("Paris");
             sdk.getWeather("Berlin");
 
-            System.out.println("Cacheed cities: " + sdk.getCacheSize());
+            System.out.println("Cached cities: " + sdk.getCachedCitiesCount());
             System.out.println("Polling will automatically update data every 5 minutes\n");
 
             // Subsequent requests will return data from the cache immediately
             System.out.println("Repeat request (from cache, instantly):");
-            WeatherData weather2 = sdk.getWeather("London");
+            WeatherResponse weather2 = sdk.getWeather("London");
             printWeatherShort(weather2);
 
             WeatherSDKFactory.removeInstance(API_KEY);
@@ -108,10 +108,10 @@ public class WeatherSDKExample {
      * Example 3: Cache demonstration.
      */
     private static void example3_CachingDemo() {
-        System.out.println("📍 Example 3: Caching (ON_DEMAND mode)\n");
+        System.out.println("📊 Example 3: Caching (ON_DEMAND mode)\n");
 
         try {
-            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.ON_DEMAND);
 
             // First request - goes to the API
             System.out.println("First request to Tokyo (from API):");
@@ -136,13 +136,13 @@ public class WeatherSDKExample {
 
             for (String city : cities) {
                 sdk.getWeather(city);
-                System.out.println(" Added: " + city + " (in cache: " + sdk.getCacheSize() + ")");
+                System.out.println(" Added: " + city + " (in cache: " + sdk.getCachedCitiesCount() + ")");
             }
 
             System.out.println("\nAttempt to add 11th city:");
             sdk.getWeather("Austin");
             System.out.println(" Austin added, oldest city removed from cache");
-            System.out.println(" Remaining in cache: " + sdk.getCacheSize() + " cities\n");
+            System.out.println(" Remaining in cache: " + sdk.getCachedCitiesCount() + " cities\n");
 
             WeatherSDKFactory.removeInstance(API_KEY);
 
@@ -155,10 +155,10 @@ public class WeatherSDKExample {
      * Example 4: Handling different types of errors.
      */
     private static void example4_ErrorHandling() {
-        System.out.println("📍 Example 4: Error Handling\n");
+        System.out.println("📊 Example 4: Error Handling\n");
 
         try {
-            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.ON_DEMAND);
 
             // Attempting to get weather for a non-existent city
             System.out.println("Request for a non-existent city:");
@@ -188,25 +188,25 @@ public class WeatherSDKExample {
      * Example 5: Working with multiple API keys.
      */
     private static void example5_MultipleInstances() {
-        System.out.println("📍 Example 5: Multiple SDK instances\n");
+        System.out.println("📊 Example 5: Multiple SDK instances\n");
 
         String apiKey1 = API_KEY;
         String apiKey2 = "ANOTHER_API_KEY"; // For demonstration
 
         try {
             // Create the first instance
-            WeatherSDK sdk1 = WeatherSDKFactory.getInstance(apiKey1, SDKMode.ON_DEMAND);
+            WeatherSDK sdk1 = WeatherSDKFactory.getInstance(apiKey1, OperationMode.ON_DEMAND);
             System.out.println("✅ SDK with the first API key created");
 
             // Attempt to create a second instance with the same key
-            WeatherSDK sdk1_duplicate = WeatherSDKFactory.getInstance(apiKey1, SDKMode.ON_DEMAND);
+            WeatherSDK sdk1_duplicate = WeatherSDKFactory.getInstance(apiKey1, OperationMode.ON_DEMAND);
             System.out.println("✅ Received an existing SDK (same object): " +
                     (sdk1 == sdk1_duplicate));
 
             // Attempting to create an SDK with the same key but a different mode
             System.out.println("\nAttempt to create an SDK with the same key but POLLING mode:");
             try {
-                WeatherSDK sdk1_different_mode = WeatherSDKFactory.getInstance(apiKey1, SDKMode.POLLING);
+                WeatherSDK sdk1_different_mode = WeatherSDKFactory.getInstance(apiKey1, OperationMode.POLLING);
             } catch (WeatherSDKException e) {
                 System.out.println(" ❌ Expected error: " + e.getMessage());
             }
@@ -226,13 +226,13 @@ public class WeatherSDKExample {
      * Example 6: Try-with-resources for automatic resource release.
      */
     private static void example6_TryWithResources() {
-        System.out.println("📍 Example 6: Try-with-resources (recommended approach)\n");
+        System.out.println("📊 Example 6: Try-with-resources (recommended approach)\n");
 
-        try (WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.POLLING)) {
+        try (WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.POLLING)) {
 
             System.out.println("The SDK has been created and will be automatically closed");
 
-            WeatherData weather = sdk.getWeather("Sydney");
+            WeatherResponse weather = sdk.getWeather("Sydney");
             printWeatherShort(weather);
 
             System.out.println("When exiting the try block, the SDK will automatically close\n");
@@ -248,9 +248,9 @@ public class WeatherSDKExample {
     /**
      * Helper method for displaying brief weather information.
      */
-    private static void printWeatherShort(WeatherData weather) {
-        System.out.println("  " + weather.getName() + ": " + 
-                         weather.getWeather().getMain() + ", " +
-                         String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
+    private static void printWeatherShort(WeatherResponse weather) {
+        System.out.println("  " + weather.getName() + ": " +
+                weather.getWeather().getMain() + ", " +
+                String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
     }
 }

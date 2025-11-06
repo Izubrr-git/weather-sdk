@@ -2,6 +2,7 @@ package com.weather.sdk.examples;
 
 import com.weather.sdk.WeatherSDK;
 import com.weather.sdk.WeatherSDKFactory;
+import com.weather.sdk.config.OperationMode;
 import com.weather.sdk.exception.WeatherSDKException;
 import com.weather.sdk.model.WeatherResponse;
 
@@ -32,7 +33,7 @@ public class Examples {
     public static void basicUsageExample() {
         System.out.println("=== Example 1: Basic Usage ===\n");
 
-        try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
+        try (WeatherSDK sdk = new WeatherSDK(API_KEY, OperationMode.ON_DEMAND)) {
 
             // Request weather for the city
             WeatherResponse weather = sdk.getWeather("London");
@@ -58,11 +59,11 @@ public class Examples {
 
         try {
             // Create the first instance
-            WeatherSDK sdk1 = WeatherSDKFactory.getInstance(API_KEY, WeatherSDK.OperationMode.ON_DEMAND);
+            WeatherSDK sdk1 = WeatherSDKFactory.getInstance(API_KEY, OperationMode.ON_DEMAND);
             System.out.println("SDK1 created");
 
             // Attempt to create a second instance with the same key
-            WeatherSDK sdk2 = WeatherSDKFactory.getInstance(API_KEY, WeatherSDK.OperationMode.ON_DEMAND);
+            WeatherSDK sdk2 = WeatherSDKFactory.getInstance(API_KEY, OperationMode.ON_DEMAND);
             System.out.println("SDK2 = SDK1: " + (sdk1 == sdk2)); // true
 
             // Get the weather
@@ -84,7 +85,7 @@ public class Examples {
     public static void pollingModeExample() {
         System.out.println("\n=== Example 3: Polling mode ===\n");
 
-        try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.POLLING)) {
+        try (WeatherSDK sdk = new WeatherSDK(API_KEY, OperationMode.POLLING)) {
 
             // Request weather for several cities
             String[] cities = {"Tokyo", "New York", "Moscow"};
@@ -95,7 +96,7 @@ public class Examples {
             }
 
             System.out.println("Cities in cache: " + sdk.getCachedCitiesCount());
-            System.out.println("In POLLING mode, data is updated automatically every 10 minutes");
+            System.out.println("In POLLING mode, data is updated automatically every 5 minutes");
 
             // In a real application, the SDK will continue to run
             // and update data in the background
@@ -113,21 +114,21 @@ public class Examples {
 
         // Error: Invalid API key
         try {
-            WeatherSDK sdk = new WeatherSDK("invalid-key", WeatherSDK.OperationMode.ON_DEMAND);
+            WeatherSDK sdk = new WeatherSDK("invalid-key", OperationMode.ON_DEMAND);
             sdk.getWeather("London");
         } catch (WeatherSDKException e) {
             System.out.println("Expected error (invalid key): " + e.getMessage());
         }
 
         // Error: Non-existent city
-        try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
+        try (WeatherSDK sdk = new WeatherSDK(API_KEY, OperationMode.ON_DEMAND)) {
             sdk.getWeather("NonExistentCity12345");
         } catch (WeatherSDKException e) {
             System.out.println("Expected error (city not found): " + e.getMessage());
         }
 
         // Error: empty city name
-        try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
+        try (WeatherSDK sdk = new WeatherSDK(API_KEY, OperationMode.ON_DEMAND)) {
             sdk.getWeather("");
         } catch (WeatherSDKException e) {
             System.out.println("Expected error (empty name): " + e.getMessage());
