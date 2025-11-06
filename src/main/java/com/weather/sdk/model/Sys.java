@@ -3,7 +3,7 @@ package com.weather.sdk.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Системная информация (восход и закат солнца).
+ * System information (sunrise and sunset).
  */
 public class Sys {
     

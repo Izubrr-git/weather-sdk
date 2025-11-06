@@ -6,9 +6,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit тесты для WeatherSDKFactory
- */
 class WeatherSDKFactoryTest {
     
     private static final String API_KEY_1 = "test-key-1";

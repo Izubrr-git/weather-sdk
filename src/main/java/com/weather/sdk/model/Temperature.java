@@ -3,8 +3,8 @@ package com.weather.sdk.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Информация о температуре.
- * Температура в Кельвинах.
+ * Temperature information.
+ * Temperature in Kelvin.
  */
 public class Temperature {
     
@@ -37,16 +37,16 @@ public class Temperature {
     public void setFeelsLike(double feelsLike) {
         this.feelsLike = feelsLike;
     }
-    
+
     /**
-     * Преобразует температуру из Кельвинов в Цельсии.
+     * Converts temperature from Kelvin to Celsius.
      */
     public double getTempCelsius() {
         return temp - 273.15;
     }
-    
+
     /**
-     * Преобразует ощущаемую температуру из Кельвинов в Цельсии.
+     * Converts perceived temperature from Kelvin to Celsius.
      */
     public double getFeelsLikeCelsius() {
         return feelsLike - 273.15;

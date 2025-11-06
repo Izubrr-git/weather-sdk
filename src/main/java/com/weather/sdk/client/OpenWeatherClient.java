@@ -14,9 +14,6 @@ import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 
-/**
- * HTTP клиент для OpenWeather API
- */
 public class OpenWeatherClient {
     
     private static final String BASE_URL = "https://api.openweathermap.org/data/2.5/weather";
@@ -33,9 +30,9 @@ public class OpenWeatherClient {
                 .build();
         this.objectMapper = new ObjectMapper();
     }
-    
+
     /**
-     * Получает текущую погоду для города
+     * Gets the current weather for the city
      */
     public WeatherResponse getCurrentWeather(String cityName) throws WeatherSDKException {
         try {
@@ -61,17 +58,17 @@ public class OpenWeatherClient {
             throw new WeatherSDKException("Network error: " + e.getMessage(), e);
         }
     }
-    
+
     /**
-     * Преобразует JSON ответ API в WeatherResponse
+     * Converts the JSON API response to a WeatherResponse
      */
     private WeatherResponse parseResponse(String jsonResponse) throws WeatherSDKException {
         try {
             JsonNode root = objectMapper.readTree(jsonResponse);
             
             WeatherResponse response = new WeatherResponse();
-            
-            // Парсим weather
+
+            // Parse the weather
             JsonNode weatherArray = root.get("weather");
             if (weatherArray != null && weatherArray.isArray() && weatherArray.size() > 0) {
                 JsonNode weatherNode = weatherArray.get(0);
@@ -81,8 +78,8 @@ public class OpenWeatherClient {
                 );
                 response.setWeather(weather);
             }
-            
-            // Парсим temperature
+
+            // Parse temperature
             JsonNode mainNode = root.get("main");
             if (mainNode != null) {
                 WeatherResponse.Temperature temp = new WeatherResponse.Temperature(
@@ -92,13 +89,13 @@ public class OpenWeatherClient {
                 response.setTemperature(temp);
             }
             
-            // Парсим visibility
+            // Parse visibility
             JsonNode visibilityNode = root.get("visibility");
             if (visibilityNode != null) {
                 response.setVisibility(visibilityNode.asInt());
             }
             
-            // Парсим wind
+            // Parse wind
             JsonNode windNode = root.get("wind");
             if (windNode != null) {
                 WeatherResponse.Wind wind = new WeatherResponse.Wind(
@@ -107,13 +104,13 @@ public class OpenWeatherClient {
                 response.setWind(wind);
             }
             
-            // Парсим datetime
+            // Parse datetime
             JsonNode dtNode = root.get("dt");
             if (dtNode != null) {
                 response.setDatetime(dtNode.asLong());
             }
             
-            // Парсим sys
+            // Parse sys
             JsonNode sysNode = root.get("sys");
             if (sysNode != null) {
                 WeatherResponse.Sys sys = new WeatherResponse.Sys(
@@ -123,13 +120,13 @@ public class OpenWeatherClient {
                 response.setSys(sys);
             }
             
-            // Парсим timezone
+            // Parse timezone
             JsonNode timezoneNode = root.get("timezone");
             if (timezoneNode != null) {
                 response.setTimezone(timezoneNode.asInt());
             }
             
-            // Парсим name
+            // Parse name
             JsonNode nameNode = root.get("name");
             if (nameNode != null) {
                 response.setName(nameNode.asText());
@@ -141,9 +138,9 @@ public class OpenWeatherClient {
             throw new WeatherSDKException("Failed to parse API response: " + e.getMessage(), e);
         }
     }
-    
+
     /**
-     * Обрабатывает ошибки HTTP
+     * Handles HTTP errors
      */
     private void handleErrorResponse(HttpResponse<String> response) throws WeatherSDKException {
         int statusCode = response.statusCode();
@@ -167,9 +164,9 @@ public class OpenWeatherClient {
                     statusCode, errorMessage));
         }
     }
-    
+
     /**
-     * Извлекает сообщение об ошибке из JSON
+     * Extracts the error message from JSON
      */
     private String extractErrorMessage(String body) {
         try {
@@ -179,7 +176,7 @@ public class OpenWeatherClient {
                 return messageNode.asText();
             }
         } catch (Exception ignored) {
-            // Игнорируем ошибки парсинга
+            // Ignore parsing errors
         }
         return "Unknown error";
     }

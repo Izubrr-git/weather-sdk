@@ -6,144 +6,144 @@ import com.weather.sdk.exception.WeatherSDKException;
 import com.weather.sdk.model.WeatherResponse;
 
 /**
- * Примеры использования Weather SDK
+ * Weather SDK usage examples
  */
 public class Examples {
-    
+
     private static final String API_KEY = "your-api-key-here";
-    
+
     public static void main(String[] args) {
-        // Пример 1: Базовое использование
+        // Example 1: Basic usage
         basicUsageExample();
-        
-        // Пример 2: Использование с фабрикой
+
+        // Example 2: Using with a Factory
         factoryExample();
-        
-        // Пример 3: Polling режим
+
+        // Example 3: Polling mode
         pollingModeExample();
-        
-        // Пример 4: Обработка ошибок
+
+        // Example 4: Error Handling
         errorHandlingExample();
     }
-    
+
     /**
-     * Пример 1: Базовое использование SDK в режиме ON_DEMAND
+     * Example 1: Basic SDK usage in ON_DEMAND mode
      */
     public static void basicUsageExample() {
-        System.out.println("=== Пример 1: Базовое использование ===\n");
-        
+        System.out.println("=== Example 1: Basic Usage ===\n");
+
         try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
-            
-            // Запрашиваем погоду для города
+
+            // Request weather for the city
             WeatherResponse weather = sdk.getWeather("London");
-            
-            // Выводим информацию
+
+            // Output information
             printWeatherInfo(weather);
-            
-            // Повторный запрос - данные будут взяты из кэша
-            System.out.println("\nПовторный запрос (из кэша):");
+
+            // Repeated request - data will be taken from the cache
+            System.out.println("\nRetrying request (from cache):");
             WeatherResponse cachedWeather = sdk.getWeather("London");
             printWeatherInfo(cachedWeather);
-            
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 2: Использование фабрики для управления экземплярами
+     * Example 2: Using a factory to manage instances
      */
     public static void factoryExample() {
-        System.out.println("\n=== Пример 2: Использование фабрики ===\n");
-        
+        System.out.println("\n=== Example 2: Using a Factory ===\n");
+
         try {
-            // Создаём первый экземпляр
+            // Create the first instance
             WeatherSDK sdk1 = WeatherSDKFactory.getInstance(API_KEY, WeatherSDK.OperationMode.ON_DEMAND);
-            System.out.println("Создан SDK1");
-            
-            // Попытка создать второй экземпляр с тем же ключом
+            System.out.println("SDK1 created");
+
+            // Attempt to create a second instance with the same key
             WeatherSDK sdk2 = WeatherSDKFactory.getInstance(API_KEY, WeatherSDK.OperationMode.ON_DEMAND);
             System.out.println("SDK2 = SDK1: " + (sdk1 == sdk2)); // true
-            
-            // Получаем погоду
+
+            // Get the weather
             WeatherResponse weather = sdk1.getWeather("Paris");
             printWeatherInfo(weather);
-            
-            // Удаляем экземпляр
+
+            // Remove the instance
             WeatherSDKFactory.removeInstance(API_KEY);
-            System.out.println("SDK удалён из фабрики");
-            
+            System.out.println("SDK removed from factory");
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 3: Использование режима POLLING
+     * Example 3: Using POLLING mode
      */
     public static void pollingModeExample() {
-        System.out.println("\n=== Пример 3: Polling режим ===\n");
-        
+        System.out.println("\n=== Example 3: Polling mode ===\n");
+
         try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.POLLING)) {
-            
-            // Запрашиваем погоду для нескольких городов
+
+            // Request weather for several cities
             String[] cities = {"Tokyo", "New York", "Moscow"};
-            
+
             for (String city : cities) {
                 WeatherResponse weather = sdk.getWeather(city);
                 System.out.println(city + ": " + weather.getTemperature().getTemp() + "K");
             }
-            
-            System.out.println("\nГородов в кэше: " + sdk.getCachedCitiesCount());
-            System.out.println("В режиме POLLING данные обновляются автоматически каждые 10 минут");
-            
-            // В реальном приложении SDK продолжит работать
-            // и обновлять данные в фоне
-            
+
+            System.out.println("Cities in cache: " + sdk.getCachedCitiesCount());
+            System.out.println("In POLLING mode, data is updated automatically every 10 minutes");
+
+            // In a real application, the SDK will continue to run
+            // and update data in the background
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 4: Обработка различных ошибок
+     * Example 4: Handling various errors
      */
     public static void errorHandlingExample() {
-        System.out.println("\n=== Пример 4: Обработка ошибок ===\n");
-        
-        // Ошибка: неверный API ключ
+        System.out.println("\n=== Example 4: Error Handling ===\n");
+
+        // Error: Invalid API key
         try {
             WeatherSDK sdk = new WeatherSDK("invalid-key", WeatherSDK.OperationMode.ON_DEMAND);
             sdk.getWeather("London");
         } catch (WeatherSDKException e) {
-            System.out.println("Ожидаемая ошибка (неверный ключ): " + e.getMessage());
+            System.out.println("Expected error (invalid key): " + e.getMessage());
         }
-        
-        // Ошибка: несуществующий город
+
+        // Error: Non-existent city
         try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
             sdk.getWeather("NonExistentCity12345");
         } catch (WeatherSDKException e) {
-            System.out.println("Ожидаемая ошибка (город не найден): " + e.getMessage());
+            System.out.println("Expected error (city not found): " + e.getMessage());
         }
-        
-        // Ошибка: пустое название города
+
+        // Error: empty city name
         try (WeatherSDK sdk = new WeatherSDK(API_KEY, WeatherSDK.OperationMode.ON_DEMAND)) {
             sdk.getWeather("");
         } catch (WeatherSDKException e) {
-            System.out.println("Ожидаемая ошибка (пустое имя): " + e.getMessage());
+            System.out.println("Expected error (empty name): " + e.getMessage());
         }
     }
-    
+
     /**
-     * Вспомогательный метод для красивого вывода информации о погоде
+     * Helper method for displaying weather information in a beautiful way
      */
     private static void printWeatherInfo(WeatherResponse weather) {
-        System.out.println("Город: " + weather.getName());
-        System.out.println("Погода: " + weather.getWeather().getMain() + 
-                          " (" + weather.getWeather().getDescription() + ")");
-        System.out.println("Температура: " + weather.getTemperature().getTemp() + "K");
-        System.out.println("Ощущается как: " + weather.getTemperature().getFeelsLike() + "K");
-        System.out.println("Скорость ветра: " + weather.getWind().getSpeed() + " м/с");
-        System.out.println("Видимость: " + weather.getVisibility() + " м");
+        System.out.println("City: " + weather.getName());
+        System.out.println("Weather: " + weather.getWeather().getMain() +
+                " (" + weather.getWeather().getDescription() + ")");
+        System.out.println("Temperature: " + weather.getTemperature().getTemp() + "K");
+        System.out.println("Feels Like: " + weather.getTemperature().getFeelsLike() + "K");
+        System.out.println("Wind Speed: " + weather.getWind().getSpeed() + " m/s");
+        System.out.println("Visibility: " + weather.getVisibility() + " m");
     }
 }

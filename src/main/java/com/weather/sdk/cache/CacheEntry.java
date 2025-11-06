@@ -3,7 +3,7 @@ package com.weather.sdk.cache;
 import com.weather.sdk.model.WeatherData;
 
 /**
- * Запись в кэше, содержащая данные о погоде и временную метку.
+ * A cache entry containing weather data and a timestamp.
  */
 public class CacheEntry {
     

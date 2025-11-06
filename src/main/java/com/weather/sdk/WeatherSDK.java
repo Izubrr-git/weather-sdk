@@ -13,13 +13,13 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * SDK для работы с OpenWeather API
- * 
- * Поддерживает два режима работы:
- * - ON_DEMAND: обновление данных только по запросу
- * - POLLING: автоматическое обновление данных каждые 10 минут
- * 
- * Пример использования:
+ * SDK for working with the OpenWeather API
+ *
+ * Supports two modes:
+ * - ON_DEMAND: data updates only on demand
+ * - POLLING: data updates automatically every 10 minutes
+ *
+ * Usage example:
  * <pre>
  * WeatherSDK sdk = new WeatherSDK("your-api-key", OperationMode.ON_DEMAND);
  * WeatherResponse weather = sdk.getWeather("London");
@@ -37,23 +37,23 @@ public class WeatherSDK implements AutoCloseable {
     private final OpenWeatherClient client;
     private final WeatherCache cache;
     private ScheduledExecutorService scheduler;
-    
+
     /**
-     * Режимы работы SDK
+     * SDK Operating Modes
      */
     public enum OperationMode {
-        /** Обновление данных только по запросу пользователя */
+        /** Updating data only upon user request */
         ON_DEMAND,
-        /** Автоматическое периодическое обновление данных */
+        /** Automatic periodic data update */
         POLLING
     }
-    
+
     /**
-     * Создаёт экземпляр SDK
-     * 
-     * @param apiKey API ключ OpenWeather
-     * @param mode режим работы SDK
-     * @throws WeatherSDKException если apiKey пустой или null
+     * Creates an SDK instance
+     *
+     * @param apiKey OpenWeather API key
+     * @param mode SDK operating mode
+     * @throws WeatherSDKException if the apiKey is empty or null
      */
     public WeatherSDK(String apiKey, OperationMode mode) throws WeatherSDKException {
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -63,21 +63,21 @@ public class WeatherSDK implements AutoCloseable {
         this.apiKey = apiKey;
         this.mode = mode != null ? mode : OperationMode.ON_DEMAND;
         this.client = new OpenWeatherClient(apiKey);
-        this.cache = new WeatherCache(10); // максимум 10 городов
-        
+        this.cache = new WeatherCache(10);
+
         if (this.mode == OperationMode.POLLING) {
             startPolling();
         }
         
         LOGGER.log(Level.INFO, "WeatherSDK initialized in {0} mode", this.mode);
     }
-    
+
     /**
-     * Получает информацию о погоде для указанного города
-     * 
-     * @param cityName название города
-     * @return данные о погоде
-     * @throws WeatherSDKException в случае ошибки запроса
+     * Gets weather information for the specified city
+     *
+     * @param cityName - city name
+     * @return weather data
+     * @throws WeatherSDKException if the request fails
      */
     public WeatherResponse getWeather(String cityName) throws WeatherSDKException {
         if (cityName == null || cityName.trim().isEmpty()) {
@@ -85,20 +85,18 @@ public class WeatherSDK implements AutoCloseable {
         }
         
         String normalizedCity = cityName.trim();
-        
-        // Проверяем кэш
+
         WeatherData cachedData = cache.get(normalizedCity);
         if (cachedData != null && cachedData.isValid()) {
             LOGGER.log(Level.FINE, "Returning cached data for {0}", normalizedCity);
             return cachedData.getWeatherResponse();
         }
-        
-        // Запрашиваем свежие данные
+
         return fetchAndCacheWeather(normalizedCity);
     }
-    
+
     /**
-     * Очищает весь кэш
+     * Clears the entire cache
      */
     public void clearCache() {
         cache.clear();
@@ -111,16 +109,16 @@ public class WeatherSDK implements AutoCloseable {
     public OperationMode getMode() {
         return mode;
     }
-    
+
     /**
-     * Возвращает количество городов в кэше
+     * Returns the current SDK operating mode
      */
     public int getCachedCitiesCount() {
         return cache.size();
     }
-    
+
     /**
-     * Запрашивает данные с API и сохраняет в кэш
+     * Requests data from the API and stores it in the cache
      */
     private WeatherResponse fetchAndCacheWeather(String cityName) throws WeatherSDKException {
         try {
@@ -132,9 +130,9 @@ public class WeatherSDK implements AutoCloseable {
             throw new WeatherSDKException("Failed to fetch weather for " + cityName + ": " + e.getMessage(), e);
         }
     }
-    
+
     /**
-     * Запускает периодическое обновление кэша
+     * Starts periodic cache refresh
      */
     private void startPolling() {
         scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
@@ -153,9 +151,9 @@ public class WeatherSDK implements AutoCloseable {
         
         LOGGER.log(Level.INFO, "Polling started with interval: {0} minutes", POLLING_INTERVAL_MINUTES);
     }
-    
+
     /**
-     * Обновляет данные для всех городов в кэше
+     * Updates data for all cities in the cache
      */
     private void updateAllCachedCities() {
         for (String cityName : cache.getCityNames()) {
@@ -168,9 +166,9 @@ public class WeatherSDK implements AutoCloseable {
             }
         }
     }
-    
+
     /**
-     * Закрывает SDK и освобождает ресурсы
+     * Closes the SDK and frees resources
      */
     @Override
     public void close() {

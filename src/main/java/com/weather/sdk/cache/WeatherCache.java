@@ -7,24 +7,24 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * LRU-кэш для хранения данных о погоде
- * 
- * Автоматически удаляет самые старые записи при превышении лимита.
- * Максимальная ёмкость - 10 городов.
+ * LRU cache for storing weather data
+ *
+ * Automatically deletes the oldest records when the limit is exceeded.
+ * Maximum capacity: 10 cities.
  */
 public class WeatherCache {
     
     private final int maxSize;
     private final Map<String, WeatherData> cache;
-    
+
     /**
-     * Создаёт кэш с заданным размером
-     * 
-     * @param maxSize максимальное количество городов в кэше
+     * Creates a cache with the specified size
+     *
+     * @param maxSize is the maximum number of cities in the cache
      */
     public WeatherCache(int maxSize) {
         this.maxSize = maxSize;
-        // LinkedHashMap с accessOrder=true для LRU
+        // LinkedHashMap with accessOrder=true for LRU
         this.cache = new LinkedHashMap<String, WeatherData>(maxSize, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, WeatherData> eldest) {
@@ -32,59 +32,59 @@ public class WeatherCache {
             }
         };
     }
-    
+
     /**
-     * Получает данные о погоде из кэша
-     * 
-     * @param cityName название города
-     * @return данные о погоде или null если не найдены
+     * Gets weather data from the cache
+     *
+     * @param cityName : city name
+     * @return weather data or null if not found
      */
     public synchronized WeatherData get(String cityName) {
         return cache.get(normalizeCityName(cityName));
     }
-    
+
     /**
-     * Сохраняет данные о погоде в кэш
-     * 
-     * @param cityName название города
-     * @param data данные о погоде
+     * Stores weather data in the cache
+     *
+     * @param cityName : city name
+     * @param data : weather data
      */
     public synchronized void put(String cityName, WeatherData data) {
         cache.put(normalizeCityName(cityName), data);
     }
-    
+
     /**
-     * Удаляет данные о погоде из кэша
-     * 
-     * @param cityName название города
+     * Removes weather data from the cache
+     *
+     * @param cityName city name
      */
     public synchronized void remove(String cityName) {
         cache.remove(normalizeCityName(cityName));
     }
-    
+
     /**
-     * Очищает весь кэш
+     * Clears the entire cache
      */
     public synchronized void clear() {
         cache.clear();
     }
-    
+
     /**
-     * Возвращает количество городов в кэше
+     * Returns the number of cities in the cache
      */
     public synchronized int size() {
         return cache.size();
     }
-    
+
     /**
-     * Возвращает множество названий городов в кэше
+     * Returns a set of city names in the cache
      */
     public synchronized Set<String> getCityNames() {
         return Set.copyOf(cache.keySet());
     }
-    
+
     /**
-     * Нормализует название города для использования в качестве ключа
+     * Normalizes the city name for use as a key
      */
     private String normalizeCityName(String cityName) {
         return cityName.trim().toLowerCase();

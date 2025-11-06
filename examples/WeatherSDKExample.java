@@ -7,246 +7,246 @@ import com.weather.sdk.exception.WeatherSDKException;
 import com.weather.sdk.model.WeatherData;
 
 /**
- * Примеры использования WeatherSDK.
- * 
- * ⚠️ Замени "YOUR_API_KEY" на свой реальный API ключ из https://openweathermap.org
+ * WeatherSDK usage examples.
+ *
+ * ⚠️ Replace "YOUR_API_KEY" with your actual API key from https://openweathermap.org
  */
 public class WeatherSDKExample {
     
-    private static final String API_KEY = "YOUR_API_KEY"; // 👈 Вставь свой API ключ здесь!
+    private static final String API_KEY = "YOUR_API_KEY";
     
     public static void main(String[] args) {
-        System.out.println("=== Примеры использования Weather SDK ===\n");
-        
-        // Пример 1: Простое использование в режиме ON_DEMAND
+        System.out.println("=== Weather SDK Usage Examples ===\n");
+
+        // Example 1: Basic usage in ON_DEMAND mode
         example1_BasicUsage();
-        
-        // Пример 2: Использование в режиме POLLING
+
+        // Example 2: Usage in POLLING mode
         example2_PollingMode();
-        
-        // Пример 3: Демонстрация кэширования
+
+        // Example 3: Caching demo
         example3_CachingDemo();
-        
-        // Пример 4: Обработка ошибок
+
+        // Example 4: Error handling
         example4_ErrorHandling();
-        
-        // Пример 5: Работа с несколькими экземплярами SDK
+
+        // Example 5: Working with multiple SDK instances
         example5_MultipleInstances();
-        
-        // Пример 6: Try-with-resources (автоматическое закрытие)
+
+        // Example 6: Try-with-resources (automatic closure)
         example6_TryWithResources();
     }
-    
+
     /**
-     * Пример 1: Базовое использование в режиме ON_DEMAND.
+     * Example 1: Basic usage in ON_DEMAND mode.
      */
     private static void example1_BasicUsage() {
-        System.out.println("📍 Пример 1: Базовое использование\n");
-        
+        System.out.println("📍 Example 1: Basic usage\n");
+
         try {
-            // Создаем экземпляр SDK в режиме ON_DEMAND
+            // Create an SDK instance in ON_DEMAND mode
             WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
-            
-            // Получаем погоду для Москвы
+
+            // Get the weather for Moscow
             WeatherData weather = sdk.getWeather("Moscow");
-            
-            // Выводим информацию
-            System.out.println("Город: " + weather.getName());
-            System.out.println("Погода: " + weather.getWeather().getMain() + 
-                             " (" + weather.getWeather().getDescription() + ")");
-            System.out.println("Температура: " + 
-                String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
-            System.out.println("Ощущается как: " + 
-                String.format("%.1f°C", weather.getTemperature().getFeelsLikeCelsius()));
-            System.out.println("Ветер: " + weather.getWind().getSpeed() + " м/с");
-            System.out.println("Видимость: " + weather.getVisibility() + " м\n");
-            
-            // Удаляем экземпляр
+
+            // Display information
+            System.out.println("City: " + weather.getName());
+            System.out.println("Weather: " + weather.getWeather().getMain() +
+                    " (" + weather.getWeather().getDescription() + ")");
+            System.out.println("Temperature: " +
+                    String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
+            System.out.println("Feels Like: " +
+                    String.format("%.1f°C", weather.getTemperature().getFeelsLikeCelsius()));
+            System.out.println("Wind: " + weather.getWind().getSpeed() + " m/s");
+            System.out.println("Visibility: " + weather.getVisibility() + " m\n");
+
+            // Remove the instance
             WeatherSDKFactory.removeInstance(API_KEY);
-            
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 2: Использование в режиме POLLING.
-     * В этом режиме данные обновляются автоматически каждые 5 минут.
+     * Example 2: Using POLLING mode.
+     * In this mode, data is updated automatically every 5 minutes.
      */
     private static void example2_PollingMode() {
-        System.out.println("📍 Пример 2: Режим POLLING\n");
-        
+        System.out.println("📍 Example 2: POLLING mode\n");
+
         try {
-            // Создаем SDK в режиме POLLING
+            // Create SDK in POLLING mode
             WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.POLLING);
-            
-            // Первый запрос - данные загружаются с API
-            System.out.println("Первый запрос (загрузка с API):");
+
+            // First request - data is loaded from the API
+            System.out.println("First request (download from API):");
             WeatherData weather1 = sdk.getWeather("London");
             printWeatherShort(weather1);
-            
-            // Добавляем еще города
+
+            // Add more cities
             sdk.getWeather("Paris");
             sdk.getWeather("Berlin");
-            
-            System.out.println("В кэше городов: " + sdk.getCacheSize());
-            System.out.println("Polling будет автоматически обновлять данные каждые 5 минут\n");
-            
-            // Последующие запросы вернут данные из кэша мгновенно
-            System.out.println("Повторный запрос (из кэша, мгновенно):");
+
+            System.out.println("Cacheed cities: " + sdk.getCacheSize());
+            System.out.println("Polling will automatically update data every 5 minutes\n");
+
+            // Subsequent requests will return data from the cache immediately
+            System.out.println("Repeat request (from cache, instantly):");
             WeatherData weather2 = sdk.getWeather("London");
             printWeatherShort(weather2);
-            
+
             WeatherSDKFactory.removeInstance(API_KEY);
-            
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 3: Демонстрация работы кэша.
+     * Example 3: Cache demonstration.
      */
     private static void example3_CachingDemo() {
-        System.out.println("📍 Пример 3: Кэширование (ON_DEMAND режим)\n");
-        
+        System.out.println("📍 Example 3: Caching (ON_DEMAND mode)\n");
+
         try {
             WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
-            
-            // Первый запрос - идет к API
-            System.out.println("Первый запрос Tokyo (с API):");
+
+            // First request - goes to the API
+            System.out.println("First request to Tokyo (from API):");
             long start1 = System.currentTimeMillis();
             sdk.getWeather("Tokyo");
             long time1 = System.currentTimeMillis() - start1;
-            System.out.println("Время: " + time1 + " мс\n");
-            
-            // Второй запрос - из кэша (должен быть быстрее)
-            System.out.println("Второй запрос Tokyo (из кэша):");
+            System.out.println("Time: " + time1 + " ms\n");
+
+            // Second request - from cache (should be faster)
+            System.out.println("Second request for Tokyo (from cache):");
             long start2 = System.currentTimeMillis();
             sdk.getWeather("Tokyo");
             long time2 = System.currentTimeMillis() - start2;
-            System.out.println("Время: " + time2 + " мс");
-            System.out.println("Кэш сработал! Ускорение в " + (time1 / Math.max(time2, 1)) + " раз\n");
-            
-            // Демонстрация лимита кэша (10 городов)
-            System.out.println("Добавляем 10 городов в кэш:");
-            String[] cities = {"New York", "Los Angeles", "Chicago", "Houston", 
-                             "Phoenix", "Philadelphia", "San Antonio", "San Diego",
-                             "Dallas", "San Jose"};
-            
+            System.out.println("Time: " + time2 + " ms");
+            System.out.println("Cache worked! Speedup of " + (time1 / Math.max(time2, 1)) + " times\n");
+
+            // Demonstration of the cache limit (10 cities)
+            System.out.println("Adding 10 cities to the cache:");
+            String[] cities = {"New York", "Los Angeles", "Chicago", "Houston",
+                    "Phoenix", "Philadelphia", "San Antonio", "San Diego",
+                    "Dallas", "San Jose"};
+
             for (String city : cities) {
                 sdk.getWeather(city);
-                System.out.println("  Добавлен: " + city + " (в кэше: " + sdk.getCacheSize() + ")");
+                System.out.println(" Added: " + city + " (in cache: " + sdk.getCacheSize() + ")");
             }
-            
-            System.out.println("\nПопытка добавить 11-й город:");
+
+            System.out.println("\nAttempt to add 11th city:");
             sdk.getWeather("Austin");
-            System.out.println("  Добавлен Austin, самый старый город удален из кэша");
-            System.out.println("  В кэше осталось: " + sdk.getCacheSize() + " городов\n");
-            
+            System.out.println(" Austin added, oldest city removed from cache");
+            System.out.println(" Remaining in cache: " + sdk.getCacheSize() + " cities\n");
+
             WeatherSDKFactory.removeInstance(API_KEY);
-            
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 4: Обработка различных типов ошибок.
+     * Example 4: Handling different types of errors.
      */
     private static void example4_ErrorHandling() {
-        System.out.println("📍 Пример 4: Обработка ошибок\n");
-        
+        System.out.println("📍 Example 4: Error Handling\n");
+
         try {
             WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.ON_DEMAND);
-            
-            // Попытка получить погоду для несуществующего города
-            System.out.println("Запрос несуществующего города:");
+
+            // Attempting to get weather for a non-existent city
+            System.out.println("Request for a non-existent city:");
             try {
                 sdk.getWeather("NonExistentCityXYZ123");
             } catch (WeatherSDKException e) {
-                System.out.println("  ❌ Ожидаемая ошибка: " + e.getMessage());
+                System.out.println(" ❌ Expected error: " + e.getMessage());
             }
-            
-            // Попытка передать пустое название
-            System.out.println("\nЗапрос с пустым названием:");
+
+            // Attempt to pass an empty name
+            System.out.println("\nRequest with an empty name:");
             try {
                 sdk.getWeather("");
             } catch (WeatherSDKException e) {
-                System.out.println("  ❌ Ожидаемая ошибка: " + e.getMessage());
+                System.out.println(" ❌ Expected error: " + e.getMessage());
             }
-            
+
             System.out.println();
             WeatherSDKFactory.removeInstance(API_KEY);
-            
+
         } catch (WeatherSDKException e) {
-            System.err.println("Неожиданная ошибка: " + e.getMessage());
+            System.err.println("Unexpected error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 5: Работа с несколькими API ключами.
+     * Example 5: Working with multiple API keys.
      */
     private static void example5_MultipleInstances() {
-        System.out.println("📍 Пример 5: Множественные экземпляры SDK\n");
-        
+        System.out.println("📍 Example 5: Multiple SDK instances\n");
+
         String apiKey1 = API_KEY;
-        String apiKey2 = "ANOTHER_API_KEY"; // Для демонстрации
-        
+        String apiKey2 = "ANOTHER_API_KEY"; // For demonstration
+
         try {
-            // Создаем первый экземпляр
+            // Create the first instance
             WeatherSDK sdk1 = WeatherSDKFactory.getInstance(apiKey1, SDKMode.ON_DEMAND);
-            System.out.println("✅ Создан SDK с первым API ключом");
-            
-            // Попытка создать второй экземпляр с тем же ключом
+            System.out.println("✅ SDK with the first API key created");
+
+            // Attempt to create a second instance with the same key
             WeatherSDK sdk1_duplicate = WeatherSDKFactory.getInstance(apiKey1, SDKMode.ON_DEMAND);
-            System.out.println("✅ Получен существующий SDK (тот же объект): " + 
-                             (sdk1 == sdk1_duplicate));
-            
-            // Попытка создать SDK с тем же ключом, но другим режимом
-            System.out.println("\nПопытка создать SDK с тем же ключом, но режимом POLLING:");
+            System.out.println("✅ Received an existing SDK (same object): " +
+                    (sdk1 == sdk1_duplicate));
+
+            // Attempting to create an SDK with the same key but a different mode
+            System.out.println("\nAttempt to create an SDK with the same key but POLLING mode:");
             try {
                 WeatherSDK sdk1_different_mode = WeatherSDKFactory.getInstance(apiKey1, SDKMode.POLLING);
             } catch (WeatherSDKException e) {
-                System.out.println("  ❌ Ожидаемая ошибка: " + e.getMessage());
+                System.out.println(" ❌ Expected error: " + e.getMessage());
             }
-            
-            System.out.println("\nВсего активных экземпляров: " + WeatherSDKFactory.getInstanceCount());
-            
-            // Удаляем все экземпляры
+
+            System.out.println("\nTotal active instances: " + WeatherSDKFactory.getInstanceCount());
+
+            // Remove all instances
             WeatherSDKFactory.removeAllInstances();
-            System.out.println("После удаления всех экземпляров: " + WeatherSDKFactory.getInstanceCount() + "\n");
-            
+            System.out.println("After removing all instances: " + WeatherSDKFactory.getInstanceCount() + "\n");
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
     }
-    
+
     /**
-     * Пример 6: Try-with-resources для автоматического освобождения ресурсов.
+     * Example 6: Try-with-resources for automatic resource release.
      */
     private static void example6_TryWithResources() {
-        System.out.println("📍 Пример 6: Try-with-resources (рекомендуемый подход)\n");
-        
+        System.out.println("📍 Example 6: Try-with-resources (recommended approach)\n");
+
         try (WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, SDKMode.POLLING)) {
-            
-            System.out.println("SDK создан и будет автоматически закрыт");
-            
+
+            System.out.println("The SDK has been created and will be automatically closed");
+
             WeatherData weather = sdk.getWeather("Sydney");
             printWeatherShort(weather);
-            
-            System.out.println("При выходе из блока try SDK автоматически закроется\n");
-            
+
+            System.out.println("When exiting the try block, the SDK will automatically close\n");
+
         } catch (WeatherSDKException e) {
-            System.err.println("Ошибка: " + e.getMessage());
+            System.err.println("Error: " + e.getMessage());
         }
-        
-        // SDK уже закрыт, очищаем из фабрики
+
+        // The SDK is already closed, clearing it from the factory
         WeatherSDKFactory.removeInstance(API_KEY);
     }
-    
+
     /**
-     * Вспомогательный метод для краткого вывода погоды.
+     * Helper method for displaying brief weather information.
      */
     private static void printWeatherShort(WeatherData weather) {
         System.out.println("  " + weather.getName() + ": " + 

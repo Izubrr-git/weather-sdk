@@ -8,9 +8,6 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-/**
- * Unit тесты для WeatherSDK
- */
 class WeatherSDKTest {
     
     private static final String VALID_API_KEY = "test-api-key";
@@ -65,7 +62,7 @@ class WeatherSDKTest {
     
     @Test
     void testClearCache() throws WeatherSDKException {
-        // Примечание: требует валидный API ключ для реального теста
+        // Requires a valid API key for the actual test
         sdk.clearCache();
         assertEquals(0, sdk.getCachedCitiesCount());
     }

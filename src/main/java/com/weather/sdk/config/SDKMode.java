@@ -1,32 +1,32 @@
 package com.weather.sdk.config;
 
 /**
- * Режимы работы WeatherSDK.
+ * WeatherSDK operating modes.
  */
 public enum SDKMode {
     /**
-     * Режим "по требованию" - данные обновляются только при явных запросах getWeather().
-     * Подходит для приложений с редкими запросами погоды.
-     * 
-     * Преимущества:
-     * - Минимальное потребление ресурсов
-     * - Нет фоновых потоков
-     * - Меньше запросов к API
+     * On-demand mode - data is updated only when explicit getWeather() requests are made.
+     * Suitable for apps with infrequent weather requests.
+     *
+     * Advantages:
+     * - Minimal resource consumption
+     * - No background threads
+     * - Fewer API requests
      */
     ON_DEMAND,
-    
+
     /**
-     * Режим постоянного обновления - данные для всех городов в кэше обновляются 
-     * автоматически каждые 5 минут в фоновом режиме.
-     * Подходит для приложений, где важна минимальная задержка при запросе погоды.
-     * 
-     * Преимущества:
-     * - Нулевая задержка при запросе (данные уже в кэше)
-     * - Всегда актуальные данные
-     * 
-     * Недостатки:
-     * - Потребляет больше ресурсов (фоновый поток)
-     * - Больше запросов к API
+     * Continuous refresh mode - data for all cities in the cache is updated
+     * automatically every 5 minutes in the background.
+     * Suitable for apps where minimal latency when querying weather is important.
+     *
+     * Advantages:
+     * - Zero latency when querying (data is already in the cache)
+     * - Always up-to-date data
+     *
+     * Disadvantages:
+     * - Consumes more resources (background thread)
+     * - More API requests
      */
     POLLING
 }

@@ -5,7 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import java.util.Objects;
 
 /**
- * Основной класс ответа SDK с данными о погоде
+ * SDK's main response class with weather data
  */
 public class WeatherResponse {
     
@@ -119,9 +119,9 @@ public class WeatherResponse {
                 ", datetime=" + datetime +
                 '}';
     }
-    
+
     /**
-     * Вложенный класс для информации о погоде
+     * Nested class for weather information
      */
     public static class Weather {
         private String main;
@@ -169,9 +169,9 @@ public class WeatherResponse {
             return main + " (" + description + ")";
         }
     }
-    
+
     /**
-     * Вложенный класс для температурных данных
+     * Nested class for temperature data
      */
     public static class Temperature {
         private double temp;
@@ -221,9 +221,9 @@ public class WeatherResponse {
             return temp + "K (feels like " + feelsLike + "K)";
         }
     }
-    
+
     /**
-     * Вложенный класс для данных о ветре
+     * Nested class for wind data
      */
     public static class Wind {
         private double speed;
@@ -260,9 +260,9 @@ public class WeatherResponse {
             return speed + " m/s";
         }
     }
-    
+
     /**
-     * Вложенный класс для системной информации
+     * Nested class for system information
      */
     public static class Sys {
         private long sunrise;

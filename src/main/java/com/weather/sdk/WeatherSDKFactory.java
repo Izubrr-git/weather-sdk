@@ -8,38 +8,36 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Фабрика для создания и управления экземплярами WeatherSDK
- * 
- * Гарантирует, что для каждого уникального API ключа существует только один экземпляр SDK.
- * Это предотвращает дублирование polling потоков и оптимизирует использование ресурсов.
- * 
- * Пример использования:
+ * Factory for creating and managing WeatherSDK instances
+ *
+ * Ensures that only one SDK instance exists for each unique API key.
+ * This prevents duplicate polling threads and optimizes resource usage.
+ *
+ * Example usage:
  * <pre>
  * WeatherSDK sdk1 = WeatherSDKFactory.getInstance("key1", OperationMode.POLLING);
- * WeatherSDK sdk2 = WeatherSDKFactory.getInstance("key1", OperationMode.POLLING); // вернёт sdk1
- * 
- * WeatherSDKFactory.removeInstance("key1"); // удаляет и закрывает SDK
+ * WeatherSDK sdk2 = WeatherSDKFactory.getInstance("key1", OperationMode.POLLING); // returns sdk1
+ *
+ * WeatherSDKFactory.removeInstance("key1"); // removes and closes the SDK
  * </pre>
  */
 public class WeatherSDKFactory {
     
     private static final Logger LOGGER = Logger.getLogger(WeatherSDKFactory.class.getName());
-    
-    // Потокобезопасная карта для хранения инстансов
+
     private static final Map<String, WeatherSDK> instances = new ConcurrentHashMap<>();
-    
-    // Приватный конструктор для предотвращения создания экземпляров
+
     private WeatherSDKFactory() {
         throw new UnsupportedOperationException("This is a utility class and cannot be instantiated");
     }
-    
+
     /**
-     * Получает или создаёт экземпляр WeatherSDK для указанного API ключа
-     * 
-     * @param apiKey API ключ OpenWeather
-     * @param mode режим работы SDK
-     * @return экземпляр WeatherSDK
-     * @throws WeatherSDKException если не удалось создать SDK
+     * Gets or creates a WeatherSDK instance for the specified API key.
+     *
+     * @param apiKey : OpenWeather API key
+     * @param mode : SDK mode
+     * @return WeatherSDK instance
+     * @throws WeatherSDKException if SDK creation failed
      */
     public static synchronized WeatherSDK getInstance(String apiKey, WeatherSDK.OperationMode mode) 
             throws WeatherSDKException {
@@ -49,16 +47,14 @@ public class WeatherSDKFactory {
         }
         
         String key = apiKey.trim();
-        
-        // Если инстанс уже существует, возвращаем его
+
         if (instances.containsKey(key)) {
             WeatherSDK existingInstance = instances.get(key);
             LOGGER.log(Level.INFO, "Returning existing WeatherSDK instance for key: {0}", 
                       maskApiKey(key));
             return existingInstance;
         }
-        
-        // Создаём новый инстанс
+
         WeatherSDK newInstance = new WeatherSDK(key, mode);
         instances.put(key, newInstance);
         
@@ -67,12 +63,12 @@ public class WeatherSDKFactory {
         
         return newInstance;
     }
-    
+
     /**
-     * Удаляет экземпляр SDK для указанного API ключа
-     * 
-     * @param apiKey API ключ
-     * @return true если экземпляр был удалён, false если его не существовало
+     * Deletes the SDK instance for the specified API key.
+     *
+     * @param apiKey API key
+     * @return true if the instance was deleted, false if it did not exist.
      */
     public static synchronized boolean removeInstance(String apiKey) {
         if (apiKey == null || apiKey.trim().isEmpty()) {
@@ -91,9 +87,9 @@ public class WeatherSDKFactory {
         
         return false;
     }
-    
+
     /**
-     * Удаляет все экземпляры SDK
+     * Removes all SDK instances
      */
     public static synchronized void removeAllInstances() {
         instances.forEach((key, sdk) -> {
@@ -104,9 +100,9 @@ public class WeatherSDKFactory {
         instances.clear();
         LOGGER.log(Level.INFO, "All WeatherSDK instances removed");
     }
-    
+
     /**
-     * Проверяет, существует ли экземпляр для указанного API ключа
+     * Checks if an instance exists for the specified API key
      */
     public static boolean hasInstance(String apiKey) {
         if (apiKey == null) {
@@ -114,16 +110,16 @@ public class WeatherSDKFactory {
         }
         return instances.containsKey(apiKey.trim());
     }
-    
+
     /**
-     * Возвращает количество активных экземпляров SDK
+     * Returns the number of active SDK instances
      */
     public static int getInstanceCount() {
         return instances.size();
     }
-    
+
     /**
-     * Маскирует API ключ для безопасного логирования
+     * Masks the API key for secure logging
      */
     private static String maskApiKey(String apiKey) {
         if (apiKey == null || apiKey.length() < 8) {

@@ -1,387 +1,329 @@
-# Архитектура Weather SDK
+# Weather SDK Architecture
 
-## 📐 Обзор архитектуры
+## Component Overview
 
-Weather SDK построен на принципах SOLID и использует несколько паттернов проектирования для обеспечения гибкости, расширяемости и удобства использования.
+```
+┌─────────────────────────────────────────────────────┐
+│                       User                          │
+└────────────────────┬────────────────────────────────┘
+                     │
+         ┌───────────▼────────────┐
+         │  WeatherSDKFactory     │  ← Singleton for instance management
+         │  (Optional)            │
+         └───────────┬────────────┘
+                     │
+         ┌───────────▼────────────┐
+         │     WeatherSDK         │  ← Main class
+         │  - ON_DEMAND           │
+         │  - POLLING             │
+         └───────┬────────┬───────┘
+                 │        │
+     ┌───────────▼──┐  ┌──▼──────────────┐
+     │ WeatherCache │  │ OpenWeatherClient│
+     │ (LRU, 10max) │  │ (HTTP)           │
+     └──────────────┘  └──┬───────────────┘
+                          │
+              ┌───────────▼───────────┐
+              │  OpenWeather API      │
+              │  (External Service)   │
+              └───────────────────────┘
+```
 
-## 🏛️ Ключевые паттерны проектирования
+## Components
 
-### 1. Factory Pattern (WeatherSDKFactory)
+### 1. WeatherSDK (Core)
 
-**Назначение**: Управление жизненным циклом экземпляров SDK.
+**Purpose**: Main SDK class providing API for working with weather.
 
-**Преимущества**:
-- Гарантирует уникальность экземпляров для каждого API ключа
-- Централизованное управление ресурсами
-- Предотвращает создание дубликатов
+**Responsibilities**:
+- Managing SDK lifecycle
+- Coordination between cache and HTTP client
+- Implementation of two operation modes (ON_DEMAND, POLLING)
+- Managing background updates (in POLLING mode)
 
-**Реализация**:
+**Key Methods**:
 ```java
-public class WeatherSDKFactory {
-    private static final Map<String, WeatherSDK> instances = new ConcurrentHashMap<>();
-    
-    public static WeatherSDK getInstance(String apiKey, SDKMode mode) {
-        // Атомарная проверка и создание
-        return instances.computeIfAbsent(apiKey, key -> new WeatherSDK(key, mode));
-    }
-}
+WeatherResponse getWeather(String cityName)
+void clearCache()
+void close()
 ```
 
-### 2. Strategy Pattern (SDKMode)
+**Patterns**:
+- AutoCloseable for resource management
+- Strategy (two operation modes)
 
-**Назначение**: Определение различных стратегий обновления данных.
+### 2. WeatherSDKFactory
 
-**Режимы**:
-- **ON_DEMAND**: Обновление по запросу
-- **POLLING**: Автоматическое обновление
+**Purpose**: Managing creation and lifecycle of SDK instances.
 
-**Преимущества**:
-- Легко добавить новые режимы работы
-- Изоляция логики каждого режима
-- Выбор стратегии при инициализации
+**Responsibilities**:
+- Guarantee single instance per API key (Singleton per key)
+- Preventing memory leaks
+- Centralized resource management
 
-### 3. Cache Pattern (WeatherCache)
-
-**Назначение**: Оптимизация производительности и снижение нагрузки на API.
-
-**Особенности**:
-- LRU (Least Recently Used) стратегия вытеснения
-- TTL (Time To Live) 10 минут
-- Максимум 10 элементов
-
-**Реализация**:
+**Key Methods**:
 ```java
-public class WeatherCache {
-    private final Map<String, CacheEntry> cache = new LinkedHashMap<>(10, 0.75f, true) {
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, CacheEntry> eldest) {
-            return size() > MAX_CACHE_SIZE;
-        }
-    };
-}
+static WeatherSDK getInstance(String apiKey, OperationMode mode)
+static boolean removeInstance(String apiKey)
 ```
 
-## 🧩 Компоненты системы
+**Patterns**:
+- Factory
+- Registry Pattern
+- Thread-safe with ConcurrentHashMap
 
-### 1. WeatherSDK (Основной класс)
+### 3. WeatherCache
 
-**Ответственность**:
-- Координация работы всех компонентов
-- Управление кэшем и режимом работы
-- Предоставление публичного API
+**Purpose**: Caching weather data with automatic invalidation.
 
-**Ключевые методы**:
-- `getWeather(String cityName)`: Получение погоды
-- `clearCache()`: Очистка кэша
-- `close()`: Освобождение ресурсов
+**Characteristics**:
+- **Strategy**: LRU (Least Recently Used)
+- **Size**: 10 cities maximum
+- **TTL**: 10 minutes
+- **Thread-safe**: synchronized methods
 
-### 2. WeatherSDKFactory (Фабрика)
-
-**Ответственность**:
-- Создание и управление экземплярами SDK
-- Обеспечение уникальности экземпляров
-- Валидация параметров
-
-**Thread-safety**: Используется `ConcurrentHashMap`
-
-### 3. WeatherApiClient (HTTP Клиент)
-
-**Ответственность**:
-- Взаимодействие с OpenWeatherMap API
-- Обработка HTTP запросов/ответов
-- Преобразование JSON в модели данных
-
-**Технологии**:
-- `java.net.http.HttpClient` (Java 11+)
-- Gson для парсинга JSON
-
-### 4. WeatherCache (Кэш)
-
-**Ответственность**:
-- Хранение погодных данных
-- Управление TTL записей
-- Реализация LRU стратегии
-
-**Thread-safety**: Используется `ReadWriteLock`
-
-### 5. Model (Модели данных)
-
-**Структура**:
-```
-WeatherData
-├── Weather (main, description)
-├── Temperature (temp, feels_like)
-├── Wind (speed)
-└── Sys (sunrise, sunset)
+**Implementation**:
+```java
+LinkedHashMap with accessOrder=true + overridden removeEldestEntry()
 ```
 
-**Особенности**:
-- POJO классы с геттерами/сеттерами
-- Аннотации Gson для маппинга JSON
-- Вспомогательные методы (например, конвертация Кельвин → Цельсий)
+### 4. OpenWeatherClient
 
-### 6. Exception (Иерархия исключений)
+**Purpose**: HTTP client for interaction with OpenWeather API.
 
-```
-WeatherSDKException
-├── ApiKeyException
-├── CityNotFoundException
-└── NetworkException
-```
+**Characteristics**:
+- Java 11 HttpClient
+- Timeout: 10 seconds
+- Detailed error handling
+- URL encoding for city names
 
-**Преимущества**:
-- Точная диагностика ошибок
-- Удобная обработка разных типов ошибок
-- Содержательные сообщения
+**Error Handling**:
+- 401: Invalid API key
+- 404: City not found
+- 429: Rate limit exceeded
+- 5xx: Server errors
 
-## 🔄 Потоки данных
+### 5. Model (WeatherResponse, WeatherData)
 
-### Режим ON_DEMAND
+**WeatherResponse**: DTO for weather data (matches assignment format).
 
-```
-User Request
-    ↓
-getWeather(city)
-    ↓
-Check Cache
-    ↓
-Cache Hit? ─YES→ Return from Cache
-    ↓ NO
-API Request
-    ↓
-Parse Response
-    ↓
-Update Cache
-    ↓
-Return Data
-```
+**WeatherData**: Wrapper with timestamp for cache validity validation.
 
-### Режим POLLING
+## Data Flows
+
+### On-Demand Mode
 
 ```
-Initialization
-    ↓
-Start Polling Thread
-    ↓
-Every 5 minutes:
-    ↓
+User
+    │
+    │ getWeather("London")
+    ▼
+WeatherSDK
+    │
+    │ 1. Check cache
+    ▼
+WeatherCache
+    │
+    ├─► [Cache valid] ──► Return from cache
+    │
+    └─► [Cache expired/missing]
+         │
+         ▼
+    OpenWeatherClient
+         │
+         │ HTTP GET
+         ▼
+    OpenWeather API
+         │
+         │ JSON Response
+         ▼
+    WeatherSDK
+         │
+         │ Save to cache
+         ▼
+    Return to user
+```
+
+### Polling Mode
+
+```
+SDK Initialization
+    │
+    │ Start ScheduledExecutorService
+    ▼
+Background Thread
+    │
+    │ Every 10 minutes
+    │
+    ▼
 For each city in cache:
-    ↓
-    API Request
-    ↓
-    Update Cache
+    │
+    │ HTTP GET
+    ▼
+OpenWeather API
+    │
+    │ Update cache
+    ▼
+Done
 
-User Request
-    ↓
-getWeather(city)
-    ↓
-Check Cache
-    ↓
-Cache Hit? ─YES→ Return from Cache
-    ↓ NO
-API Request (first time)
-    ↓
-Update Cache
-    ↓
-Return Data
+In parallel:
+User ──► getWeather() ──► Instant response from cache
 ```
 
-## 🔒 Многопоточность
+## Thread Safety
 
-### Thread-Safety гарантии
+### Synchronization
 
-1. **WeatherSDKFactory**
-   - `ConcurrentHashMap` для хранения экземпляров
-   - Атомарные операции `computeIfAbsent()`
+1. **WeatherCache**: all methods synchronized
+2. **WeatherSDKFactory**: getInstance() and remove methods synchronized
+3. **ScheduledExecutorService**: daemon thread for polling
 
-2. **WeatherCache**
-   - `ReadWriteLock` для синхронизации
-   - Множественное чтение, эксклюзивная запись
-
-3. **Polling Thread**
-   - Демон-поток (не блокирует завершение приложения)
-   - Graceful shutdown при закрытии SDK
-
-### Пример использования Lock'ов
+### Shutdown Strategy
 
 ```java
-public WeatherData get(String cityName) {
-    lock.readLock().lock();
-    try {
-        CacheEntry entry = cache.get(cityName);
-        // ... логика
-    } finally {
-        lock.readLock().unlock();
-    }
-}
-
-public void put(String cityName, WeatherData data) {
-    lock.writeLock().lock();
-    try {
-        cache.put(cityName, new CacheEntry(data, System.currentTimeMillis()));
-    } finally {
-        lock.writeLock().unlock();
-    }
-}
+close() → shutdown scheduler → await termination → force shutdown if needed
 ```
 
-## 📊 Диаграмма классов
+## Error Handling
+
+### Exception Hierarchy
 
 ```
-┌─────────────────────┐
-│ WeatherSDKFactory   │
-│ (Singleton pattern) │
-└──────────┬──────────┘
-           │ creates
-           ↓
-┌─────────────────────┐
-│    WeatherSDK       │◄──────────┐
-│  - apiKey           │           │
-│  - mode             │           │
-│  - apiClient        │           │
-│  - cache            │           │
-│  - pollingExecutor  │           │
-└──────────┬──────────┘           │
-           │                      │
-           │ uses                 │
-           ↓                      │
-┌─────────────────────┐          │
-│ WeatherApiClient    │          │
-│  - apiKey           │          │
-│  - httpClient       │          │
-│  + fetchWeather()   │          │
-└─────────────────────┘          │
-                                 │
-┌─────────────────────┐          │
-│   WeatherCache      │          │
-│  - cache (LRU)      │──────────┘
-│  - lock             │
-│  + get()            │
-│  + put()            │
-└─────────────────────┘
+Exception
+    │
+    └─► WeatherSDKException
+            │
+            ├─► Invalid API key
+            ├─► City not found
+            ├─► Rate limit exceeded
+            ├─► Network error
+            └─► Server error
 ```
 
-## 🎯 Принципы SOLID
+### Strategy
 
-### Single Responsibility Principle (SRP)
-- `WeatherSDK`: Координация компонентов
-- `WeatherApiClient`: Только HTTP взаимодействие
-- `WeatherCache`: Только кэширование
-- `WeatherSDKFactory`: Только управление жизненным циклом
+- All public methods throw `WeatherSDKException`
+- Detailed error messages
+- Logging via java.util.logging
 
-### Open/Closed Principle (OCP)
-- Новые режимы работы добавляются через enum `SDKMode`
-- Новые типы данных легко добавить через модели
-- Расширяемая иерархия исключений
+## Performance
 
-### Liskov Substitution Principle (LSP)
-- Все исключения наследуются от `WeatherSDKException`
-- Модели данных следуют единому контракту
+### Optimizations
 
-### Interface Segregation Principle (ISP)
-- SDK предоставляет минимальный, но достаточный API
-- Клиент не зависит от ненужных методов
+1. **Caching**: reduces API requests by 90%+
+2. **LRU strategy**: O(1) for get/put operations
+3. **Polling mode**: zero-latency for user requests
+4. **Connection pooling**: built into HttpClient
 
-### Dependency Inversion Principle (DIP)
-- SDK зависит от абстракций (интерфейсы, enum), а не конкретных реализаций
-- Легко заменить HTTP клиент или кэш на другую реализацию
+### Metrics
 
-## 🚀 Производительность
+- **Cache hit rate**: expected >80% for active cities
+- **Response time**:
+    - Cache: <1ms
+    - API: 100-500ms (depends on network)
+- **Memory footprint**: ~10KB per city in cache
 
-### Оптимизации
+## Scalability
 
-1. **Кэширование**
-   - Снижает количество запросов к API
-   - Уменьшает задержку ответа
+### Current Limitations
 
-2. **LRU стратегия**
-   - Автоматическое управление памятью
-   - Эффективное использование ограниченного кэша
+- 10 cities in cache (assignment requirement)
+- Single thread for polling
 
-3. **ReadWriteLock**
-   - Позволяет множественное одновременное чтение
-   - Блокировка только при записи
+### Extension Possibilities
 
-4. **Connection Pooling**
-   - HttpClient переиспользует соединения
-   - Сокращает время установки соединения
-
-### Метрики производительности
-
-| Операция | ON_DEMAND (первый запрос) | ON_DEMAND (из кэша) | POLLING |
-|----------|---------------------------|---------------------|---------|
-| Запрос | 200-500ms | <1ms | <1ms |
-| Память | ~10KB на город | ~10KB на город | ~10KB на город |
-| CPU | Минимальное | Минимальное | Минимальное + фоновый поток |
-
-## 🔧 Расширяемость
-
-### Как добавить новый режим работы
-
-1. Добавь значение в `SDKMode`:
+1. **Configurable cache size**
 ```java
-public enum SDKMode {
-    ON_DEMAND,
-    POLLING,
-    AGGRESSIVE_CACHING  // новый режим
+WeatherSDK(String apiKey, OperationMode mode, int cacheSize)
+```
+
+2. **Multiple data sources**
+```java
+interface WeatherProvider {
+    WeatherResponse getWeather(String city);
 }
 ```
 
-2. Добавь логику в `WeatherSDK`:
+3. **Configurable polling intervals**
 ```java
-if (mode == SDKMode.AGGRESSIVE_CACHING) {
-    // Инициализация нового режима
-}
+PollingConfig config = new PollingConfig()
+    .interval(5, TimeUnit.MINUTES)
+    .maxConcurrentUpdates(3);
 ```
 
-### Как добавить новые поля данных
-
-1. Добавь поле в модель:
+4. **Persistent cache**
 ```java
-public class WeatherData {
-    private Humidity humidity;  // новое поле
-    
-    public Humidity getHumidity() {
-        return humidity;
-    }
-}
+WeatherCache extends PersistentCache<String, WeatherData>
 ```
 
-2. Обнови парсинг в `WeatherApiClient`:
-```java
-Humidity humidity = new Humidity(root.get("humidity").getAsInt());
-weatherData.setHumidity(humidity);
+## Security
+
+### Protection Measures
+
+1. **API Key hidden in logs**: masking in WeatherSDKFactory
+2. **Input data validation**: null-checks, empty-checks
+3. **Timeout protection**: 10 seconds per request
+4. **Rate limiting awareness**: handling 429 errors
+
+### Recommendations
+
+- Store API keys in environment variables
+- Use HTTPS (default)
+- Don't log sensitive data
+
+## Testing
+
+### Unit Tests
+
+- WeatherSDKTest: basic functionality
+- WeatherSDKFactoryTest: instance management
+- WeatherCacheTest: caching and LRU
+- OpenWeatherClientTest: HTTP client (with mock)
+
+### Integration Tests
+
+- Real requests to OpenWeather API
+- Polling mode testing
+- Cache stress testing
+
+## CI/CD Pipeline (Recommendations)
+
+```yaml
+build:
+  - mvn clean compile
+  
+test:
+  - mvn test
+  - mvn jacoco:report (coverage > 80%)
+  
+quality:
+  - mvn checkstyle:check
+  - mvn pmd:check
+  - SonarQube analysis
+  
+package:
+  - mvn package
+  - Generate javadoc
+  
+deploy:
+  - Maven Central
+  - GitHub Releases
 ```
 
-## 📝 Рекомендации по развитию
+## Dependencies
 
-### Потенциальные улучшения
+### Direct
 
-1. **Асинхронный API**
-   - CompletableFuture для неблокирующих операций
-   - Reactive Streams для потоковой обработки
+- **Jackson 2.15.2**: JSON serialization
+- **JUnit 5.10.0**: testing (scope: test)
 
-2. **Конфигурируемость**
-   - Настраиваемый TTL кэша
-   - Настраиваемый размер кэша
-   - Настраиваемый интервал polling
+### Implicit
 
-3. **Метрики и мониторинг**
-   - Счетчики запросов
-   - Время ответа
-   - Hit rate кэша
+- Java 11 HttpClient (built-in)
+- java.util.concurrent (built-in)
+- java.util.logging (built-in)
 
-4. **Персистентный кэш**
-   - Сохранение кэша на диск
-   - Восстановление после перезапуска
-
-5. **Batch запросы**
-   - Получение погоды для нескольких городов за один запрос
-
-6. **Retry логика**
-   - Автоматические повторные попытки при сетевых ошибках
-   - Exponential backoff
-
----
-
-Документ подготовлен с ❤️ для команды разработчиков
+**Advantages of minimal dependencies**:
+- Small artifact size
+- Fewer version conflicts
+- Fast installation

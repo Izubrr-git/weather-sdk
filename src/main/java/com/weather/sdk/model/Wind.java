@@ -3,7 +3,7 @@ package com.weather.sdk.model;
 import com.google.gson.annotations.SerializedName;
 
 /**
- * Информация о ветре.
+ * Wind information.
  */
 public class Wind {
     
