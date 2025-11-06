@@ -50,13 +50,25 @@ public class WeatherSDK implements AutoCloseable {
      * @throws WeatherSDKException if apiKey is empty or null
      */
     public WeatherSDK(String apiKey, OperationMode mode) throws WeatherSDKException {
+        this(apiKey, mode, null);
+    }
+
+    /**
+     * Creates SDK instance with custom client (for testing).
+     *
+     * @param apiKey OpenWeather API key
+     * @param mode SDK operation mode
+     * @param client custom WeatherApiClient (null for default)
+     * @throws WeatherSDKException if apiKey is empty or null
+     */
+    WeatherSDK(String apiKey, OperationMode mode, WeatherApiClient client) throws WeatherSDKException {
         if (apiKey == null || apiKey.trim().isEmpty()) {
             throw new WeatherSDKException("API key cannot be null or empty");
         }
 
         this.apiKey = apiKey.trim();
         this.mode = mode != null ? mode : OperationMode.ON_DEMAND;
-        this.client = new WeatherApiClient(this.apiKey);
+        this.client = client != null ? client : new WeatherApiClient(this.apiKey);
         this.cache = new WeatherCache(10);
 
         if (this.mode == OperationMode.POLLING) {
@@ -168,7 +180,6 @@ public class WeatherSDK implements AutoCloseable {
 
     /**
      * Updates data for all cities in cache.
-     *
      */
     private void updateAllCachedCities() {
         Set<String> citiesToUpdate = cache.getCityNames();
