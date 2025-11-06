@@ -163,7 +163,7 @@ try {
 ## 🎯 What's Next?
 
 ### Study the Documentation
-- 📖 [README.md](../README.md) - Full documentation
+- 📖 [README.md](README.md) - Full documentation
 - 🏗️ [ARCHITECTURE.md](ARCHITECTURE.md) - SDK architecture
 - 💻 [Examples](../examples/) - More code examples
 
