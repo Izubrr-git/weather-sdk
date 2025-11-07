@@ -223,26 +223,48 @@ public class WeatherSDKExample {
     }
 
     /**
-     * Example 6: Try-with-resources for automatic resource release.
+     * Example 6: Try-with-resources (without Factory)
      */
     private static void example6_TryWithResources() {
-        System.out.println("📊 Example 6: Try-with-resources (recommended approach)\n");
+        System.out.println("📊 Example 6: Try-with-resources (direct creation)\n");
 
-        try (WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.POLLING)) {
+        // Create the SDK directly, WITHOUT Factory
+        try (WeatherSDK sdk = new WeatherSDK(API_KEY, OperationMode.ON_DEMAND)) {
 
-            System.out.println("The SDK has been created and will be automatically closed");
+            System.out.println("SDK created directly (not via Factory)");
+            System.out.println("It will be automatically closed when exiting the try block\n");
 
             WeatherResponse weather = sdk.getWeather("Sydney");
             printWeatherShort(weather);
-
-            System.out.println("When exiting the try block, the SDK will automatically close\n");
 
         } catch (WeatherSDKException e) {
             System.err.println("Error: " + e.getMessage());
         }
 
-        // The SDK is already closed, clearing it from the factory
-        WeatherSDKFactory.removeInstance(API_KEY);
+        System.out.println("SDK automatically closed ✅\n");
+    }
+
+    /**
+     * Example 7: Working with Factory (correct approach)
+     */
+    private static void example7_FactoryProperUsage() {
+        System.out.println("📊 Example 7: Working with Factory correctly\n");
+
+        try {
+            // Get the SDK from the factory
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(API_KEY, OperationMode.POLLING);
+
+            WeatherResponse weather = sdk.getWeather("Tokyo");
+            printWeatherShort(weather);
+
+            // IMPORTANT: When working with Factory, use removeInstance()
+            // It will automatically close the SDK
+            WeatherSDKFactory.removeInstance(API_KEY);
+            System.out.println("SDK removed from Factory and automatically closed ✅\n");
+
+        } catch (WeatherSDKException e) {
+            System.err.println("Error: " + e.getMessage());
+        }
     }
 
     /**

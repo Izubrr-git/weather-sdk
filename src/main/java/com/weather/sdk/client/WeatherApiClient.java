@@ -19,7 +19,7 @@ import java.time.Duration;
 
 /**
  * HTTP client for working with OpenWeather API.
- *
+ * <p>
  * Uses Jackson for JSON parsing.
  * Handles all API error types with specific exceptions.
  */
@@ -103,7 +103,7 @@ public class WeatherApiClient {
 
             // Parse weather
             JsonNode weatherArray = root.get("weather");
-            if (weatherArray != null && weatherArray.isArray() && weatherArray.size() > 0) {
+            if (weatherArray != null && weatherArray.isArray() && !weatherArray.isEmpty()) {
                 JsonNode weatherNode = weatherArray.get(0);
                 WeatherResponse.Weather weather = new WeatherResponse.Weather(
                         weatherNode.get("main").asText(),

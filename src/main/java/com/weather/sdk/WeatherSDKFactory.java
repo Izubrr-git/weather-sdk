@@ -10,10 +10,10 @@ import java.util.logging.Logger;
 
 /**
  * Factory for creating and managing WeatherSDK instances.
- *
+ * <p>
  * Ensures that only one SDK instance exists for each unique API key.
  * This prevents duplicate polling threads and optimizes resource usage.
- *
+ * <p>
  * Usage example:
  * <pre>
  * WeatherSDK sdk1 = WeatherSDKFactory.getInstance("key1", OperationMode.POLLING);

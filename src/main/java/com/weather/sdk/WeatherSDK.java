@@ -16,11 +16,11 @@ import java.util.logging.Logger;
 
 /**
  * SDK for working with OpenWeather API.
- *
+ * <p>
  * Supports two modes:
  * - ON_DEMAND: data is updated only on demand
  * - POLLING: data is updated automatically every 5 minutes
- *
+ * <p>
  * Usage example:
  * <pre>
  * try (WeatherSDK sdk = new WeatherSDK("your-api-key", OperationMode.ON_DEMAND)) {

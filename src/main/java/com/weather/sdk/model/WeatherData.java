@@ -5,7 +5,7 @@ import java.time.temporal.ChronoUnit;
 
 /**
  * Wrapper for cached weather data with validation.
- *
+ * <p>
  * Stores WeatherResponse and timestamp to check data freshness.
  * Data is considered valid if less than 10 minutes have passed.
  */

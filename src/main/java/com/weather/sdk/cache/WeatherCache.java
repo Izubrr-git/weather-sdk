@@ -9,7 +9,7 @@ import java.util.HashSet;
 
 /**
  * LRU cache for storing weather data.
- *
+ * <p>
  * Automatically removes oldest entries when limit is exceeded.
  * Maximum capacity: 10 cities.
  */
