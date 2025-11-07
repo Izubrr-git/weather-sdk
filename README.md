@@ -1,4 +1,27 @@
-# Weather SDK Architecture
+# Weather SDK
+
+A lightweight Java SDK for accessing the OpenWeather API with smart caching and flexible operation modes.
+
+## Quick Start
+
+```java
+// Create SDK
+WeatherSDK sdk = new WeatherSDK("your-api-key", OperationMode.ON_DEMAND);
+
+// Get weather
+WeatherResponse weather = sdk.getWeather("London");
+System.out.println(weather.getName() + ": " + 
+                   weather.getTemperature().getTempCelsius() + "°C");
+
+// Clean up
+sdk.close();
+```
+
+## Examples
+
+For detailed usage examples, see:
+- **[examples/Examples.java](examples/Examples.java)** - Basic usage patterns and common scenarios
+- **[examples/WeatherSDKExample.java](examples/WeatherSDKExample.java)** - Comprehensive examples covering all SDK features
 
 ## Component Overview
 
@@ -19,7 +42,7 @@
          └───────┬────────┬───────┘
                  │        │
      ┌───────────▼──┐  ┌──▼───────────────┐
-     │ WeatherCache │  │ OpenWeatherClient│
+     │ WeatherCache │  │ WeatherApiClient │
      │ (LRU, 10max) │  │ (HTTP)           │
      └──────────────┘  └──┬───────────────┘
                           │
@@ -87,7 +110,7 @@ static boolean removeInstance(String apiKey)
 LinkedHashMap with accessOrder=true + overridden removeEldestEntry()
 ```
 
-### 4. OpenWeatherClient
+### 4. WeatherApiClient
 
 **Purpose**: HTTP client for interaction with OpenWeather API.
 
@@ -129,7 +152,7 @@ WeatherCache
     └─► [Cache expired/missing]
          │
          ▼
-    OpenWeatherClient
+    WeatherApiClient
          │
          │ HTTP GET
          ▼
@@ -153,7 +176,7 @@ SDK Initialization
     ▼
 Background Thread
     │
-    │ Every 10 minutes
+    │ Every 5 minutes
     │
     ▼
 For each city in cache:
@@ -193,9 +216,14 @@ Exception
     │
     └─► WeatherSDKException
             │
-            ├─► Invalid API key
-            ├─► City not found
-            ├─► Rate limit exceeded
-            ├─► Network error
-            └─► Server error
+            ├─► ApiKeyException (Invalid API key)
+            ├─► CityNotFoundException (City not found)
+            ├─► NetworkException (Network error)
+            └─► (Rate limit exceeded, Server error, etc.)
 ```
+
+### Strategy
+
+- All public methods throw `WeatherSDKException`
+- Detailed error messages
+- Logging via java.util.logging
