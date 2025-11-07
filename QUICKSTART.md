@@ -40,29 +40,29 @@ java -cp weather-sdk-1.0.0.jar:. YourApp
 
 ```java
 import com.weather.sdk.*;
-import com.weather.sdk.config.SDKMode;
+import com.weather.sdk.config.OperationMode;
 import com.weather.sdk.model.WeatherData;
 
 public class QuickStart {
     public static void main(String[] args) {
         String apiKey = "your_api_key_here";
-        
+
         try {
             // 1. Create SDK
-            WeatherSDK sdk = WeatherSDKFactory.getInstance(apiKey, SDKMode.ON_DEMAND);
-            
+            WeatherSDK sdk = WeatherSDKFactory.getInstance(apiKey, OperationMode.ON_DEMAND);
+
             // 2. Get weather
             WeatherData weather = sdk.getWeather("Moscow");
-            
+
             // 3. Use the data
             System.out.println("🌍 City: " + weather.getName());
-            System.out.println("🌡️  Temperature: " + 
-                String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
+            System.out.println("🌡️  Temperature: " +
+                    String.format("%.1f°C", weather.getTemperature().getTempCelsius()));
             System.out.println("☁️  Weather: " + weather.getWeather().getDescription());
-            
+
             // 4. Close SDK
             WeatherSDKFactory.removeInstance(apiKey);
-            
+
         } catch (Exception e) {
             System.err.println("Error: " + e.getMessage());
         }

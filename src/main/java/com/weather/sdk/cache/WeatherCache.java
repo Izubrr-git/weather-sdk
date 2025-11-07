@@ -29,7 +29,7 @@ public class WeatherCache {
         }
         this.maxSize = maxSize;
         // LinkedHashMap with accessOrder=true for LRU implementation
-        this.cache = new LinkedHashMap<String, WeatherData>(maxSize, 0.75f, true) {
+        this.cache = new LinkedHashMap<>(maxSize, 0.75f, true) {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, WeatherData> eldest) {
                 return size() > WeatherCache.this.maxSize;

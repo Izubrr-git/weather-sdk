@@ -18,7 +18,7 @@
          │  - POLLING             │
          └───────┬────────┬───────┘
                  │        │
-     ┌───────────▼──┐  ┌──▼──────────────┐
+     ┌───────────▼──┐  ┌──▼───────────────┐
      │ WeatherCache │  │ OpenWeatherClient│
      │ (LRU, 10max) │  │ (HTTP)           │
      └──────────────┘  └──┬───────────────┘
@@ -43,9 +43,9 @@
 
 **Key Methods**:
 ```java
-WeatherResponse getWeather(String cityName)
-void clearCache()
-void close()
+WeatherResponse getWeather(String cityName);
+void clearCache();
+void close();
 ```
 
 **Patterns**:
@@ -63,8 +63,8 @@ void close()
 
 **Key Methods**:
 ```java
-static WeatherSDK getInstance(String apiKey, OperationMode mode)
-static boolean removeInstance(String apiKey)
+static WeatherSDK getInstance(String apiKey, OperationMode mode);
+static boolean removeInstance(String apiKey);
 ```
 
 **Patterns**:
@@ -84,7 +84,7 @@ static boolean removeInstance(String apiKey)
 
 **Implementation**:
 ```java
-LinkedHashMap with accessOrder=true + overridden removeEldestEntry()
+LinkedHashMap with accessOrder=true + overridden removeEldestEntry();
 ```
 
 ### 4. OpenWeatherClient

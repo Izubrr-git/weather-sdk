@@ -64,7 +64,7 @@ class WeatherSDKTest {
     }
     
     @Test
-    void testClearCache() throws WeatherSDKException {
+    void testClearCache() {
         sdk.clearCache();
         assertEquals(0, sdk.getCachedCitiesCount());
     }
@@ -86,7 +86,7 @@ class WeatherSDKTest {
     }
     
     @Test
-    void testGetWeatherAfterClose() throws WeatherSDKException {
+    void testGetWeatherAfterClose() {
         sdk.close();
         assertThrows(WeatherSDKException.class, () -> 
             sdk.getWeather(TEST_CITY)
